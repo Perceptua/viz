@@ -26,3 +26,7 @@ body:before {
 	-o-background-size: contain;
 	background-size: 75%;
 }
+
+image {
+	max-width: 300px;
+}
