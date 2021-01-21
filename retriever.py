@@ -94,7 +94,7 @@ if __name__ == '__main__':
     request_limit = None
 
     if check_is_test():
-        request_limit = 10
+        request_limit = 5
 
     wydna_retriever = Retriever('wydna00')
     wydna_retriever.get_batch_connections()

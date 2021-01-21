@@ -37,7 +37,7 @@ def get_layout():
                 title='')
 
     return go.Layout(
-        title='<br><a href="https://twitter.com/wydna00">wydna.research</a> Twitter followers',
+        title='<br>Connections between <a href="https://twitter.com/wydna00">wydna.research</a> Twitter followers',
         titlefont_size=16,
         showlegend=False,
         hovermode='closest',
@@ -53,18 +53,24 @@ def get_layout():
             zaxis=dict(axis))
        )
 
-def get_node_info(G):
+def get_node_info(G, connections):
     node_adjacencies = []
     node_text = []
 
     for node, adjacencies in enumerate(G.adjacency()):
         node_adjacencies.append(len(adjacencies[1]))
-        node_text.append('Connections: '+str(len(adjacencies[1])))
+        matched_node = ''
+
+        for c in connections:
+            if c['pk'] == str(node):
+                matched_node = c['uid']
+
+        node_text.append('user_id '+matched_node+' connections: '+str(len(adjacencies[1])))
 
     return node_adjacencies, node_text
 
 
-def plot(G):
+def plot(G, connections):
     layt = nx.spring_layout(G, dim=3)
     N = len(G.nodes)
 
@@ -83,7 +89,7 @@ def plot(G):
 
     edge_trace = go.Scatter3d(
         x=edge_x, y=edge_y, z=edge_z,
-        line=dict(width=0.5, color='#888'),
+        line=dict(width=0.75, color='#888'),
         hoverinfo='none',
         mode='lines')
 
@@ -105,7 +111,7 @@ def plot(G):
             ),
             line_width=2))
 
-    node_adjacencies, node_text = get_node_info(G)
+    node_adjacencies, node_text = get_node_info(G, connections)
     node_trace.marker.color = node_adjacencies
     node_trace.text = node_text
 
@@ -117,4 +123,4 @@ if __name__ == '__main__':
     c.connections = map_to_primary_key(c.connections)
 
     graph = generate_graph(c.connections)
-    plot(graph)
+    plot(graph, c.connections)
