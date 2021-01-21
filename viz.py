@@ -116,7 +116,7 @@ def plot(G, connections):
     node_trace.text = node_text
 
     fig = go.Figure(data=[edge_trace, node_trace], layout=get_layout())
-    fig.write_html('index.html', auto_open=True)
+    fig.write_html('network.html', auto_open=True)
 
 if __name__ == '__main__':
     c = Connections(testing=True)
