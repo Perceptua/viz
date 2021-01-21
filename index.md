@@ -1,10 +1,6 @@
-# viz
+## —Projects—
 
-### data visualization with python
-
-##—Projects—
-
-<div id="wydna">
+<div id="wydna" markdown="1">
   ### wydna research
   
   uses the twitter api & python visualization tools to examine the
