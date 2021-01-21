@@ -186,7 +186,7 @@ def infinite_voronoi(vor, points, fig):
 
 
 if __name__ == '__main__':
-    c = Connections(testing=False, threshold=5)
+    c = Connections(testing=False, threshold=10)
     c.connections = map_to_primary_key(c.connections)
 
     graph = generate_graph(c.connections)
