@@ -1,8 +1,9 @@
 import csv, pprint
 
 class Connections:
-    def __init__(self, testing=False):
-        self.connections = self.read_connections()
+    def __init__(self, testing=False, threshold=1):
+        self.threshold = threshold
+        self.connections = self.prune_connections(self.read_connections())
 
     def read_connections(self):
         connections = []
@@ -14,8 +15,25 @@ class Connections:
                 connections.append({
                     'pk': row[0],
                     'uid': row[1],
-                    'connections': row[2].replace('[', '').replace(']', '').replace(' ', '').split(',')
+                    'connections': row[2].replace('[', '').replace(']', '').replace(' ', '').replace('\'','').split(',')
                 })
+
+        return connections
+
+    def prune_connections(self, connections):
+        prune = []
+        for c in connections:
+            if len(c['connections']) < self.threshold:
+                prune.append(c['uid'])
+
+        return self.remove(prune, connections)
+
+    def remove(self, uid_list, connections):
+        for uid in uid_list:
+            connections = [c for c in connections if c['uid'] != uid]
+
+            for c in connections:
+                c['connections'] = [u for u in c['connections'] if u != uid]
 
         return connections
 

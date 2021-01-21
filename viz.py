@@ -28,30 +28,26 @@ def generate_graph(connections):
 
     return G
 
-def get_layout():
-    axis = dict(showbackground=False,
-                showline=False,
-                zeroline=False,
-                showgrid=False,
-                showticklabels=False,
-                title='')
+def get_layout(nodes, threshold):
+    info_string = (
+        '<br>connections between '
+        '{num_nodes} <a href="https://twitter.com/wydna00">wydna.research</a> twitter followers '
+        '(threshold={threshold} connections).'
+    ).format(num_nodes=str(len(nodes)), threshold=threshold)
+
+    axis = dict(showbackground=False,showline=False,
+                zeroline=False,showgrid=False,
+                showticklabels=False,title='')
 
     return go.Layout(
-        title='<br>Connections between <a href="https://twitter.com/wydna00">wydna.research</a> Twitter followers',
-        titlefont_size=16,
-        showlegend=False,
-        hovermode='closest',
+        title=info_string, titlefont_size=16,
+        showlegend=False, hovermode='closest',
         margin=dict(b=20,l=5,r=5,t=40),
         annotations=[ dict(
             text='created by <a href="https://twitter.com/Aphorikles">@Aphorikles</a>',
-            showarrow=False,
-            xref="paper", yref="paper",
+            showarrow=False, xref="paper", yref="paper",
             x=0.005, y=-0.002 ) ],
-       scene=dict(
-            xaxis=dict(axis),
-            yaxis=dict(axis),
-            zaxis=dict(axis))
-       )
+       scene=dict(xaxis=dict(axis), yaxis=dict(axis),zaxis=dict(axis)))
 
 def get_node_info(G, connections):
     node_adjacencies = []
@@ -59,24 +55,17 @@ def get_node_info(G, connections):
 
     for node, adjacencies in enumerate(G.adjacency()):
         node_adjacencies.append(len(adjacencies[1]))
-        matched_node = ''
-
-        for c in connections:
-            if c['pk'] == str(node):
-                matched_node = c['uid']
-
-        node_text.append('user_id '+matched_node+' connections: '+str(len(adjacencies[1])))
+        node_text.append('connections: '+str(len(adjacencies[1])))
 
     return node_adjacencies, node_text
 
 
-def plot(G, connections):
+def plot(G, connections, threshold):
     layt = nx.spring_layout(G, dim=3)
-    N = len(G.nodes)
 
-    node_x = [layt[str(k)][0] for k in range(1, N)]
-    node_y = [layt[str(k)][1] for k in range(1, N)]
-    node_z = [layt[str(k)][2] for k in range(1, N)]
+    node_x = [layt[str(k)][0] for k in G.nodes]
+    node_y = [layt[str(k)][1] for k in G.nodes]
+    node_z = [layt[str(k)][2] for k in G.nodes]
 
     edge_x = []
     edge_y = []
@@ -90,37 +79,29 @@ def plot(G, connections):
     edge_trace = go.Scatter3d(
         x=edge_x, y=edge_y, z=edge_z,
         line=dict(width=0.75, color='#888'),
-        hoverinfo='none',
-        mode='lines')
+        hoverinfo='none', mode='lines')
 
     node_trace = go.Scatter3d(
         x=node_x, y=node_y, z=node_z,
-        mode='markers',
-        hoverinfo='text',
+        mode='markers', hoverinfo='text',
         marker=dict(
-            showscale=True,
-            colorscale='Inferno',
-            reversescale=True,
-            color=[],
-            size=10,
-            colorbar=dict(
-                thickness=15,
-                title='Node Connections',
-                xanchor='left',
-                titleside='right'
-            ),
-            line_width=2))
+            showscale=True, colorscale='Inferno',
+            reversescale=True, color=[], size=10,
+            line_width=2, colorbar=dict(
+                thickness=15, title='node connections',
+                xanchor='left', titleside='right'
+            )))
 
     node_adjacencies, node_text = get_node_info(G, connections)
     node_trace.marker.color = node_adjacencies
     node_trace.text = node_text
 
-    fig = go.Figure(data=[edge_trace, node_trace], layout=get_layout())
+    fig = go.Figure(data=[edge_trace, node_trace], layout=get_layout(G.nodes, threshold))
     fig.write_html('network.html', auto_open=True)
 
 if __name__ == '__main__':
-    c = Connections(testing=True)
+    c = Connections(testing=False, threshold=3)
     c.connections = map_to_primary_key(c.connections)
 
     graph = generate_graph(c.connections)
-    plot(graph, c.connections)
+    plot(graph, c.connections, c.threshold)
