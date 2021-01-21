@@ -110,11 +110,11 @@ def plot(G):
     node_trace.text = node_text
 
     fig = go.Figure(data=[edge_trace, node_trace], layout=get_layout())
-    fig.write_html('viz.html', auto_open=True)
+    fig.write_html('index.html', auto_open=True)
 
 if __name__ == '__main__':
     c = Connections(testing=True)
     c.connections = map_to_primary_key(c.connections)
-    
+
     graph = generate_graph(c.connections)
     plot(graph)
