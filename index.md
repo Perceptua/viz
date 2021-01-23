@@ -2,7 +2,7 @@
 
 ### twitter connections
 
-![MoLV Map](/images/big_map.png)
+![MoLV Map](/images/hitchcock_birds.png)
 
 uses the twitter api & python visualization tools to examine the
 connections between twitter followers
