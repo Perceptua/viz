@@ -1,13 +1,12 @@
-import twitter, os, csv, sys, random
+import twitter, os, csv, sys, random, time
 
 class Retriever:
-    def __init__(self, handle):
+    def __init__(self, handle, request_limit):
         self.handle = handle
+        self.out_file = self.handle + '\\connections.csv'
+        self.request_limit = request_limit
         self.api = self.load_api()
-        self.uid, self.followers = self.get_followers()
-        self.complete = []
-        self.incomplete = self.followers.copy()
-        self.write_id = random.randint(0, 999999999)
+        self.uid, self.followers = self.get_user_info()
 
     def load_api(self):
         # load Twitter app credentials from environment variables
@@ -27,14 +26,20 @@ class Retriever:
 
         return api
 
-    def get_followers(self):
-        user = api.GetUser(screen_name=self.handle)
-        return user.id, api.GetFollowerIDs(user_id=user.id, total_count=request_limit)
+    def get_user_info(self):
+        user = self.api.GetUser(screen_name=self.handle)
+        followers = self.get_followers(user.id)
 
+        return user, followers
 
-    def find_connections(self, uid):
+    def get_followers(self, uid):
+        followers = self.api.GetFollowerIDs(user_id=uid, total_count=self.request_limit)
+
+        return followers
+
+    def get_user_connections(self, uid):
         connections = []
-        followers = api.GetFollowerIDs(user_id=uid, total_count=request_limit)
+        followers = self.get_followers(uid)
 
         for f in followers:
             if f in self.followers:
@@ -42,42 +47,40 @@ class Retriever:
 
         return connections
 
-
-    def get_batch_connections(self):
-        connections = []
+    def get_all_connections(self):
         errors = []
-
-        self.api.InitializeRateLimit()
-        limit_status = self.api.rate_limit.get_limit('https://api.twitter.com/1.1/followers/ids.json')
+        complete = []
+        incomplete = self.followers.copy()
 
         for f in range(len(self.followers)):
-            if limit_status.remaining != 0:
+            connections = []
 
-                try:
-                    connections.append({
-                        'pk': f,
-                        'uid': self.followers[f],
-                        'connections': find_connections(self.followers[f]),
-                    })
+            try:
+                connections.append({
+                    'pk': f + 1,
+                    'uid': self.followers[f],
+                    'connections': self.get_user_connections(self.followers[f]),
+                })
+            except Exception as e:
+                # exceptions occur when user account is private
+                errors.append(self.followers[f])
 
-                except Exception as e:
-                    # exceptions occur when user account is private
-                    errors.append(f)
+            self.write_batch(connections)
+            complete.append(self.followers[f])
+            incomplete.remove(self.followers[f])
+            print('progress: ', str((len(complete) / len(self.followers)) * 100), '%', sep='')
 
-                self.complete.append(f)
-                self.incomplete.remove(f)
-                print('progress: ', str((len(self.complete) / len(self.followers)) / 100), '%', sep='')
-            else:
-                self.write_batch(connections)
+        print('errors:', errors)
 
-    def write_batch(self, connections):
-        filename = 'connections' + str(self.write_id) + '.csv'
-
-        with open(filename, 'a', newline='\n') as f:
+    def write_headers(self):
+        with open(self.out_file, 'a', newline='\n') as f:
             writer = csv.DictWriter(f, fieldnames=['pk', 'uid', 'connections'])
             writer.writeheader()
-            for c in connections:
-                writer.writerow(c)
+
+    def write_batch(self, connections):
+        with open(self.out_file, 'a', newline='\n') as f:
+            writer = csv.DictWriter(f, fieldnames=['pk', 'uid', 'connections'])
+            writer.writerows(connections)
 
 
 def check_is_test():
@@ -96,5 +99,7 @@ if __name__ == '__main__':
     if check_is_test():
         request_limit = 5
 
-    wydna_retriever = Retriever('wydna00')
-    wydna_retriever.get_batch_connections()
+    handle = input('enter the twitter handle whose followers you want to retrieve: ')
+    retriever = Retriever(handle, request_limit)
+    retriever.write_headers()
+    retriever.get_all_connections()

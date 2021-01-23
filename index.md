@@ -1,18 +1,18 @@
 # Projects
 
-### wydna twitter connections
+### twitter connections
 
 ![MoLV Map](/images/big_map.png)
 
 uses the twitter api & python visualization tools to examine the
-connections between followers of the wydna twitter account
+connections between twitter followers
 
-* [view voronoi diagram][1]
-* [view network graph][2]
+* [view network diagram][1]
+* [view voronoi diagram][2]
 * [view heatmap][3]
 * [view surface][4]
 
-[1]: voronoi.html
-[2]: network.html
-[3]: heatmap.html
-[4]: surface.html
+[1]: /Aphorikles/network.html
+[2]: /Aphorikles/voronoi.html
+[3]: /Aphorikles/heatmap.html
+[4]: /Aphorikles/surface.html
