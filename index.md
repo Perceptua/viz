@@ -12,7 +12,7 @@ connections between twitter followers
 * [view heatmap][3]
 * [view surface][4]
 
-[1]: /Aphorikles/network.html
-[2]: /Aphorikles/voronoi.html
-[3]: /Aphorikles/heatmap.html
-[4]: /Aphorikles/surface.html
+[1]: /wydna00/network.html
+[2]: /wydna00/voronoi.html
+[3]: /wydna00/heatmap.html
+[4]: /wydna00/surface.html
