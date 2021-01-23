@@ -1,5 +1,5 @@
 import plotly.graph_objects as go
-from connections import Connections
+from ConnectionScrubber import Scrubber
 from scipy.spatial import Voronoi
 import networkx as nx
 import numpy as np
@@ -20,23 +20,17 @@ class VizTwitter:
         self.G = self.generate_graph()
 
     def get_connections(self):
-        c = Connections(self.handle, threshold=self.threshold)
-        c.connections = self.map_to_primary_key(c.connections)
+        scrubber = Scrubber(self.handle, threshold=self.threshold)
 
-        return c.connections
+        return scrubber.connections
 
-    def map_to_primary_key(self, connections):
-        uid_to_key = {}
+    def lookup_user(self, key=None, uid=None):
+        if key:
+            search = [c for c in self.connections if str(key) == c['pk']]
+        elif uid:
+            search = [c for c in self.connections if str(uid) == c['uid']]
 
-        for c in connections:
-            pk = c['pk']
-            uid = c['uid']
-            uid_to_key[uid] = pk
-
-        for c in connections:
-            c['connections'] = [uid_to_key[i] if len(i) else None for i in c['connections']]
-
-        return connections
+        return search
 
     def generate_graph(self):
         G = nx.Graph()
@@ -45,7 +39,10 @@ class VizTwitter:
         edge_list = []
 
         for c in self.connections:
-            [edge_list.append((c['pk'], i)) if i else None for i in c['connections']]
+            for i in c['connections']:
+                user = self.lookup_user(uid=i[0])
+                if user:
+                    edge_list.append((c['pk'], user[0]['pk']))
 
         G.add_edges_from(edge_list)
 
@@ -77,7 +74,7 @@ class VizTwitter:
             showgrid=False,showticklabels=False,title='')
 
         return go.Layout(
-            title=info_string, titlefont_size=16,paper_bgcolor='lightcoral', plot_bgcolor='lightcoral', titlefont_color='floralwhite',
+            title=info_string, titlefont_size=16, paper_bgcolor='lightcoral', plot_bgcolor='lightcoral', titlefont_color='floralwhite',
             showlegend=False, hovermode='closest', margin=dict(b=100,l=5,r=5,t=100), font={'color': 'floralwhite'},
             annotations=[dict(text='created by <a href="https://twitter.com/Aphorikles">@Aphorikles</a>',
                 showarrow=False, xref="paper", yref="paper",x=0.005, y=-0.002)],
@@ -89,9 +86,17 @@ class VizTwitter:
 
         for node, adjacencies in enumerate(self.G.adjacency()):
             node_adjacencies.append(len(adjacencies[1]))
-            node_text.append('connections: '+str(len(adjacencies[1])))
+            user = self.lookup_user(key=node+1)
+            node_text.append('@'+user[0]['handle']+' connections: '+str(len(adjacencies[1])))
 
         return node_adjacencies, node_text
+
+    def style_trace(self, trace):
+        node_adjacencies, node_text = self.get_node_info()
+        trace.marker.color = node_adjacencies
+        trace.text = node_text
+
+        return trace
 
     def get_node_pos(self, dims):
         layt = nx.spring_layout(self.G, dim=dims)
@@ -134,37 +139,49 @@ class VizTwitter:
                     xanchor='left', titleside='right'
                 )))
 
-        node_adjacencies, node_text = self.get_node_info()
-        node_trace.marker.color = node_adjacencies
-        node_trace.text = node_text
-
+        node_trace = self.style_trace(node_trace)
         fig = go.Figure(data=[edge_trace, node_trace], layout=self.get_layout())
         fig.write_html(self.handle+'\\network.html', auto_open=False)
 
     def surface_plot(self):
         layt, nodes, edges = self.get_node_pos(3)
         fig = go.Figure(
-            data=[go.Mesh3d(x=nodes[0], y=nodes[1], z=nodes[2],opacity=0.5, color='skyblue')],
+            data=[go.Mesh3d(x=nodes[0], y=nodes[1], z=nodes[2],opacity=0.8, color='cornflowerblue')],
             layout=self.get_layout())
 
         fig.write_html(self.handle+'\\surface.html', auto_open=False)
 
     def heat_plot(self):
-        row_length = round(len(self.connections) / 14)
+        row_length = round(len(self.connections) / 10)
         count = 0
-        row = []
+        row_x = []
+        row_z = []
+        x = []
         z = []
 
         for c in self.connections:
-            if count < row_length:
-                row += [len(c['connections'])]
+            x_data = '@' + c['handle']
+            z_data = len(c['connections'])
+
+            if count <= row_length:
+                row_x += [x_data]
+                row_z += [z_data]
                 count += 1
             else:
-                z += [row]
-                row = [len(c['connections'])]
+                x += [row_x]
+                z += [row_z]
+                row_x = [x_data]
+                row_z = [z_data]
                 count = 1
 
-        fig = go.Figure(data=[go.Heatmap(z=z, colorscale='BuPu')],layout=self.get_layout())
+        x += [row_x]
+        z += [row_z]
+
+        fig = go.Figure(
+            data=[go.Heatmap(z=z, text=x, colorscale='BuPu', reversescale=True,
+                hoverongaps=False, hoverinfo='text+z')],
+            layout=self.get_layout())
+
         fig.write_html(self.handle+'\\heatmap.html', auto_open=False)
 
     def voronoi_plot(self, infinite=False):
@@ -174,15 +191,18 @@ class VizTwitter:
         vor = Voronoi(points)
         fig = go.Figure()
 
-        fig.add_trace(go.Scatter(
+        point_trace = go.Scatter(
             x=points[:,0], y=points[:,1],
             mode='markers', hoverinfo='text', name='points',
-            marker=dict(color=points[:,0], colorscale='BuPu')))
+            marker=dict(color=points[:,0], colorscale='BuPu', reversescale=True))
+
+        point_trace = self.style_trace(point_trace)
+        fig.add_trace(point_trace)
 
         fig.add_trace(go.Scatter(
             x=vor.vertices[:,0], y=vor.vertices[:,1],
             mode='markers', hoverinfo='text', name='vertices',
-            marker=dict(color=vor.vertices[:,0], colorscale='BuPu')))
+            marker=dict(color=vor.vertices[:,0], colorscale='BuPu', reversescale=True)))
 
         for simplex in vor.ridge_vertices:
             simplex = np.asarray(simplex)
@@ -192,7 +212,7 @@ class VizTwitter:
                     line=dict(color='floralwhite')))
 
         fig.update_layout(self.get_layout())
-        fig.write_html(self.handle+'\\voronoi.html', auto_open=True)
+        fig.write_html(self.handle+'\\voronoi.html', auto_open=False)
 
         if infinite:
             fig = self.infinite_voronoi(vor, points, fig)
@@ -219,7 +239,8 @@ class VizTwitter:
 
 
 if __name__ == '__main__':
-    print('which user\'s data do you want to visualize?', next(os.walk('.'))[1], sep='\n')
+    choices = [c for c in next(os.walk('.'))[1] if c != '__pycache__']
+    print('which user\'s data do you want to visualize?', choices, sep='\n')
     handle = input('username: ')
     threshold = input('enter connection threshold (\#): ')
 

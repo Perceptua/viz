@@ -10,9 +10,7 @@ connections between twitter followers
 * [view network diagram][1]
 * [view voronoi diagram][2]
 * [view heatmap][3]
-* [view surface][4]
 
 [1]: /Aphorikles/network.html
 [2]: /Aphorikles/voronoi.html
 [3]: /Aphorikles/heatmap.html
-[4]: /Aphorikles/surface.html

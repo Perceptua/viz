@@ -1,12 +1,17 @@
-import twitter, os, csv, sys, random, time
+import twitter, os, csv, time
 
-class Retriever:
+class TwitterScraper:
     def __init__(self, handle, request_limit):
-        self.handle = handle
-        self.out_file = self.handle + '\\connections.csv'
-        self.request_limit = request_limit
         self.api = self.load_api()
-        self.uid, self.followers = self.get_user_info()
+        time.sleep(5) # allow api to initialize
+
+        self.handle = handle
+        self.request_limit = request_limit
+        self.out_file = self.handle + '\\connections.csv'
+        if self.request_limit:
+            self.out_file = self.handle + '\\test_connections.csv'
+
+        self.user, self.followers = self.get_user_info()
 
     def load_api(self):
         # load Twitter app credentials from environment variables
@@ -24,6 +29,8 @@ class Retriever:
             sleep_on_rate_limit=True
         )
 
+        api.InitializeRateLimit()
+
         return api
 
     def get_user_info(self):
@@ -33,13 +40,15 @@ class Retriever:
         return user, followers
 
     def get_followers(self, uid):
-        followers = self.api.GetFollowerIDs(user_id=uid, total_count=self.request_limit)
+        followers = self.api.GetFollowers(user_id=uid,
+            total_count=self.request_limit, include_user_entities=False)
+        followers = [[f.id, f.screen_name] for f in followers]
 
         return followers
 
-    def get_user_connections(self, uid):
+    def get_user_connections(self, user):
         connections = []
-        followers = self.get_followers(uid)
+        followers = self.get_followers(user[0])
 
         for f in followers:
             if f in self.followers:
@@ -48,38 +57,41 @@ class Retriever:
         return connections
 
     def get_all_connections(self):
+        self.write_initial()
         errors = []
-        complete = []
-        incomplete = self.followers.copy()
-
+        
         for f in range(len(self.followers)):
             connections = []
 
             try:
                 connections.append({
-                    'pk': f + 1,
-                    'uid': self.followers[f],
+                    'pk': f + 2,
+                    'user': self.followers[f],
                     'connections': self.get_user_connections(self.followers[f]),
                 })
             except Exception as e:
                 # exceptions occur when user account is private
-                errors.append(self.followers[f])
+                errors.append((self.followers[f], e))
 
             self.write_batch(connections)
-            complete.append(self.followers[f])
-            incomplete.remove(self.followers[f])
-            print('progress: ', str((len(complete) / len(self.followers)) * 100), '%', sep='')
 
         print('errors:', errors)
 
-    def write_headers(self):
-        with open(self.out_file, 'a', newline='\n') as f:
-            writer = csv.DictWriter(f, fieldnames=['pk', 'uid', 'connections'])
+    def write_initial(self):
+        initial_user = {
+            'pk': 1,
+            'user': [self.user.id, self.user.screen_name],
+            'connections': self.followers,
+        }
+
+        with open(self.out_file, 'w', newline='\n') as f:
+            writer = csv.DictWriter(f, fieldnames=['pk', 'user', 'connections'])
             writer.writeheader()
+            writer.writerow(initial_user)
 
     def write_batch(self, connections):
         with open(self.out_file, 'a', newline='\n') as f:
-            writer = csv.DictWriter(f, fieldnames=['pk', 'uid', 'connections'])
+            writer = csv.DictWriter(f, fieldnames=['pk', 'user', 'connections'])
             writer.writerows(connections)
 
 
@@ -91,15 +103,15 @@ def check_is_test():
         return is_test
     except:
         print('error: please indicate whether you are running a test (y/n).')
-        return check_is_test()
+        return self.check_is_test()
 
 if __name__ == '__main__':
+    handle = input('enter the twitter handle whose followers you want to retrieve: ')
     request_limit = None
 
     if check_is_test():
-        request_limit = 5
+        request_limit = 3
 
-    handle = input('enter the twitter handle whose followers you want to retrieve: ')
-    retriever = Retriever(handle, request_limit)
-    retriever.write_headers()
-    retriever.get_all_connections()
+    print('proceeding with request limit', request_limit)
+    scraper = TwitterScraper(handle, request_limit)
+    scraper.get_all_connections()

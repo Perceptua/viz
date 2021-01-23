@@ -1,31 +1,50 @@
 import csv, pprint
 
-class Connections:
-    def __init__(self, handle, threshold=1):
+class Scrubber:
+    def __init__(self, handle, threshold, test=False):
         self.handle = handle
         self.threshold = int(threshold)
         self.filename = self.handle + '\\connections.csv'
+
+        if test:
+            self.filename = self.handle + '\\test_connections.csv'
+
         self.uids = []
         self.init_connections = self.read_connections()
         self.connections = self.prune_connections()
 
     def read_connections(self):
-        connections = []
+        read = []
 
         with open(self.filename, 'r', newline='\n') as f:
             reader = csv.reader(f)
             next(reader) # skip headers
 
             for row in reader:
-                self.uids.append(row[1])
-                # row format is [primary_key, uid, [connections]]
-                connections.append({
-                    'pk': row[0],
-                    'uid': row[1],
-                    'connections': row[2].replace('[', '').replace(']', '').replace(' ', '').replace('\'','').split(',')
-                })
+                user = self.format_user(row[1])
+                self.uids.append(user[0])
 
-        return connections
+                # csv row format is [primary_key, [uid, handle], [connections]]
+                read.append({
+                    'pk': row[0],
+                    'uid': user[0],
+                    'handle': user[1],
+                    'connections': self.format_connections(row[2])})
+
+        return read
+
+    def format_user(self, string):
+        return string.replace('[', '').replace(']', '').replace(' ', '').replace('\'','').split(',')
+
+    def format_connections(self, string):
+        sub_lists = [s for s in string.split('[') if s]
+        formatted = [s.replace(']','').replace('\'','').replace(' ','').split(',') for s in sub_lists]
+        [f.remove('') for f in formatted if '' in f]
+
+        if formatted[0]:
+            return formatted
+        else:
+            return []
 
     def prune_connections(self):
         first_prune = self.remove(self.init_connections, self.check_has_uid(self.init_connections))
@@ -38,8 +57,9 @@ class Connections:
 
         for c in connections:
             for u in c['connections']:
-                if u not in self.uids:
-                    prune.append(c['uid'])
+                if u and u[0] not in self.uids:
+                    # print(u[1], 'does not have a matching uid')
+                    prune.append(u[1])
 
         return prune
 
@@ -48,6 +68,7 @@ class Connections:
 
         for c in connections:
             if len(c['connections']) < self.threshold:
+                # print(c['handle'], 'has less than', self.threshold, 'connection(s)' )
                 prune.append(c['uid'])
 
         return prune
@@ -69,21 +90,10 @@ class Connections:
             pk += 1
 
         return connections
-
-    def write_connections(self):
-        with open(self.filename, 'w', newline='\n') as f:
-            writer = csv.writer(f)
-            writer.writerow(['pk','uid', 'connetions'])
-
-            count = 1
-            for c in self.connections:
-                writer.writerow([count, self.connections[c][0], self.connections[c][1]])
-                count += 1
-
     def show_connections(self, connections):
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(connections)
 
 if __name__ == '__main__':
-    connections = Connections(handle='Aphorikles')
-    connections.show_connections(connections.connections)
+    scrubber = Scrubber(handle='Aphorikles', threshold=0, test=False)
+    scrubber.show_connections(scrubber.connections)

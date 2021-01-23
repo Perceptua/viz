@@ -16,6 +16,7 @@ api = twitter.Api(
 )
 
 api.InitializeRateLimit()
-limit_status = api.rate_limit.get_limit('https://api.twitter.com/1.1/followers/ids.json')
+time.sleep(5)
+limit_status = api.rate_limit.get_limit('https://api.twitter.com/1.1/followers/list.json')
 print(limit_status)
 print('resets in:', (limit_status.reset - time.time()) / 60, 'minutes')
