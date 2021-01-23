@@ -77,8 +77,8 @@ class VizTwitter:
             showgrid=False,showticklabels=False,title='')
 
         return go.Layout(
-            title=info_string, titlefont_size=16,paper_bgcolor='pink', plot_bgcolor='pink', titlefont_color='black',
-            showlegend=False, hovermode='closest', margin=dict(b=100,l=5,r=5,t=100), font={'color': 'white'},
+            title=info_string, titlefont_size=16,paper_bgcolor='lightcoral', plot_bgcolor='lightcoral', titlefont_color='floralwhite',
+            showlegend=False, hovermode='closest', margin=dict(b=100,l=5,r=5,t=100), font={'color': 'floralwhite'},
             annotations=[dict(text='created by <a href="https://twitter.com/Aphorikles">@Aphorikles</a>',
                 showarrow=False, xref="paper", yref="paper",x=0.005, y=-0.002)],
            scene=dict(xaxis=dict(axis_3d), yaxis=dict(axis_3d), zaxis=dict(axis_3d)), xaxis=dict(axis_2d), yaxis=dict(axis_2d))
@@ -120,14 +120,14 @@ class VizTwitter:
 
         edge_trace = go.Scatter3d(
             x=edges[0], y=edges[1], z=edges[2],
-            line=dict(width=0.75, color='#888'),
+            line=dict(width=0.75, color='floralwhite'),
             hoverinfo='none', mode='lines')
 
         node_trace = go.Scatter3d(
             x=nodes[0], y=nodes[1], z=nodes[2],
             mode='markers', hoverinfo='text',
             marker=dict(
-                showscale=True, colorscale='Aggrnyl',
+                showscale=True, colorscale='BuPu',
                 reversescale=True, color=[], size=10,
                 line_width=2, colorbar=dict(
                     thickness=15, title='node connections',
@@ -144,7 +144,7 @@ class VizTwitter:
     def surface_plot(self):
         layt, nodes, edges = self.get_node_pos(3)
         fig = go.Figure(
-            data=[go.Mesh3d(x=nodes[0], y=nodes[1], z=nodes[2],opacity=0.5, color='rgba(244,22,100,0.6)')],
+            data=[go.Mesh3d(x=nodes[0], y=nodes[1], z=nodes[2],opacity=0.5, color='skyblue')],
             layout=self.get_layout())
 
         fig.write_html(self.handle+'\\surface.html', auto_open=False)
@@ -164,7 +164,7 @@ class VizTwitter:
                 row = [len(c['connections'])]
                 count = 1
 
-        fig = go.Figure(data=[go.Heatmap(z=z, colorscale='Aggrnyl')],layout=self.get_layout())
+        fig = go.Figure(data=[go.Heatmap(z=z, colorscale='BuPu')],layout=self.get_layout())
         fig.write_html(self.handle+'\\heatmap.html', auto_open=False)
 
     def voronoi_plot(self, infinite=False):
@@ -177,12 +177,12 @@ class VizTwitter:
         fig.add_trace(go.Scatter(
             x=points[:,0], y=points[:,1],
             mode='markers', hoverinfo='text', name='points',
-            marker=dict(color=points[:,0], colorscale='Aggrnyl')))
+            marker=dict(color=points[:,0], colorscale='BuPu')))
 
         fig.add_trace(go.Scatter(
             x=vor.vertices[:,0], y=vor.vertices[:,1],
             mode='markers', hoverinfo='text', name='vertices',
-            marker=dict(color=vor.vertices[:,0], colorscale='Aggrnyl')))
+            marker=dict(color=vor.vertices[:,0], colorscale='BuPu')))
 
         for simplex in vor.ridge_vertices:
             simplex = np.asarray(simplex)
