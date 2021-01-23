@@ -11,6 +11,6 @@ connections between twitter followers
 * [view voronoi diagram][2]
 * [view heatmap][3]
 
-[1]: /Aphorikles/network.html
-[2]: /Aphorikles/voronoi.html
-[3]: /Aphorikles/heatmap.html
+[1]: /twitter/Aphorikles/network.html
+[2]: /twitter/Aphorikles/voronoi.html
+[3]: /twitter/Aphorikles/heatmap.html
