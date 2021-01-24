@@ -65,7 +65,7 @@ class VizTwitter:
             '<br>connections between {num_nodes} followers of '
             '<a href="https://twitter.com/{handle}">@{handle}</a> '
             '(threshold={threshold} connections).'
-        ).format(num_nodes=str(len(self.G.nodes)), handle=self.handle, threshold=self.threshold)
+        ).format(num_nodes=str(len(self.G.nodes)-1), handle=self.handle, threshold=self.threshold)
 
         axis_2d = dict(showline=False,zeroline=False,showgrid=False,
             showticklabels=False,title='')
