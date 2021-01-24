@@ -74,7 +74,7 @@ class VizTwitter:
             showgrid=False,showticklabels=False,title='')
 
         return go.Layout(
-            title=info_string, titlefont_size=16, paper_bgcolor='beige', plot_bgcolor='beige', titlefont_color='darkslategrey',
+            title=info_string, titlefont_size=16, paper_bgcolor='snow', plot_bgcolor='snow', titlefont_color='darkslategrey',
             showlegend=False, hovermode='closest', margin=dict(b=100,l=5,r=5,t=100), font={'color': 'darkslategrey'},
             annotations=[dict(text='created by <a href="https://twitter.com/Aphorikles">@Aphorikles</a>',
                 showarrow=False, xref="x domain", yref="y domain", x=0, y=-0.2)],
