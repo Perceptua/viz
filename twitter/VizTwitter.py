@@ -74,10 +74,10 @@ class VizTwitter:
             showgrid=False,showticklabels=False,title='')
 
         return go.Layout(
-            title=info_string, titlefont_size=16, paper_bgcolor='black', plot_bgcolor='black', titlefont_color='floralwhite',
-            showlegend=False, hovermode='closest', margin=dict(b=100,l=5,r=5,t=100), font={'color': 'floralwhite'},
+            title=info_string, titlefont_size=16, paper_bgcolor='beige', plot_bgcolor='beige', titlefont_color='darkslategrey',
+            showlegend=False, hovermode='closest', margin=dict(b=100,l=5,r=5,t=100), font={'color': 'darkslategrey'},
             annotations=[dict(text='created by <a href="https://twitter.com/Aphorikles">@Aphorikles</a>',
-                showarrow=False, xref="paper", yref="paper",x=0.005, y=-0.002)],
+                showarrow=False, xref="x domain", yref="y domain", x=0, y=-0.2)],
            scene=dict(xaxis=dict(axis_3d), yaxis=dict(axis_3d), zaxis=dict(axis_3d)), xaxis=dict(axis_2d), yaxis=dict(axis_2d))
 
     def get_node_info(self):
@@ -125,14 +125,14 @@ class VizTwitter:
 
         edge_trace = go.Scatter3d(
             x=edges[0], y=edges[1], z=edges[2],
-            line=dict(width=0.75, color='floralwhite'),
+            line=dict(width=1, color='darkslategrey'),
             hoverinfo='none', mode='lines')
 
         node_trace = go.Scatter3d(
             x=nodes[0], y=nodes[1], z=nodes[2],
             mode='markers', hoverinfo='text',
             marker=dict(
-                showscale=True, colorscale='haline',
+                showscale=True, colorscale='Burgyl',
                 reversescale=False, color=[], size=10,
                 line_width=2, colorbar=dict(
                     thickness=15, title='node connections',
@@ -178,7 +178,7 @@ class VizTwitter:
         z += [row_z]
 
         fig = go.Figure(
-            data=[go.Heatmap(z=z, text=x, colorscale='haline', reversescale=False,
+            data=[go.Heatmap(z=z, text=x, colorscale='Burgyl', reversescale=False,
                 hoverongaps=False, hoverinfo='text+z')],
             layout=self.get_layout())
 
@@ -194,7 +194,7 @@ class VizTwitter:
         point_trace = go.Scatter(
             x=points[:,0], y=points[:,1],
             mode='markers', hoverinfo='text', name='points',
-            marker=dict(color=points[:,0], colorscale='haline', reversescale=False))
+            marker=dict(color=points[:,0], colorscale='Burgyl', reversescale=False))
 
         point_trace = self.style_trace(point_trace)
         fig.add_trace(point_trace)
@@ -202,14 +202,14 @@ class VizTwitter:
         fig.add_trace(go.Scatter(
             x=vor.vertices[:,0], y=vor.vertices[:,1],
             mode='markers', hoverinfo='text', name='vertices',
-            marker=dict(color=vor.vertices[:,0], colorscale='haline', reversescale=False)))
+            marker=dict(color=vor.vertices[:,0], colorscale='Burgyl', reversescale=False)))
 
         for simplex in vor.ridge_vertices:
             simplex = np.asarray(simplex)
             if np.all(simplex >= 0):
                 fig.add_trace(go.Scatter(
                     x=vor.vertices[simplex, 0], y=vor.vertices[simplex, 1], mode='lines',
-                    line=dict(color='floralwhite')))
+                    line=dict(color='darkslategrey')))
 
         fig.update_layout(self.get_layout())
         fig.write_html(self.handle+'\\voronoi.html', auto_open=False)
@@ -233,7 +233,7 @@ class VizTwitter:
                 far_point = vor.vertices[i] + np.sign(np.dot(midpoint - center, n)) * n * 100
 
                 fig.add_trace(go.Scatter(x=[vor.vertices[i,0], far_point[0]], y=[vor.vertices[i,1], far_point[1]],
-                    mode='lines', line=dict(color='floralwhite')))
+                    mode='lines', line=dict(color=points[:,1])))
 
         return fig
 
@@ -242,7 +242,7 @@ if __name__ == '__main__':
     choices = [c for c in next(os.walk('.'))[1] if c != '__pycache__']
     print('which user\'s data do you want to visualize?', choices, sep='\n')
     handle = input('username: ')
-    threshold = input('enter connection threshold (\#): ')
+    threshold = input('enter connection threshold (#): ')
 
     viz = VizTwitter(handle, threshold)
 
@@ -250,7 +250,7 @@ if __name__ == '__main__':
     original = set(viz.plots.keys())
     selected = set(
         [int(i) for i in input(
-            'enter the plots you wish to generate (\# separated by spaces): '
+            'enter the plots you wish to generate (# separated by spaces): '
         ).split(' ')]
     )
 

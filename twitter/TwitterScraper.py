@@ -7,10 +7,7 @@ class TwitterScraper:
 
         self.handle = handle
         self.request_limit = request_limit
-        self.out_file = self.handle + '\\connections.csv'
-        if self.request_limit:
-            self.out_file = self.handle + '\\test_connections.csv'
-
+        self.out_file = self.get_file()
         self.user, self.followers = self.get_user_info()
 
     def load_api(self):
@@ -32,6 +29,15 @@ class TwitterScraper:
         api.InitializeRateLimit()
 
         return api
+
+    def get_file(self):
+        os.mkdir(self.handle)
+        out_file = self.handle + '\\connections.csv'
+
+        if self.request_limit:
+            out_file = self.handle + '\\test_connections.csv'
+
+        return out_file
 
     def get_user_info(self):
         user = self.api.GetUser(screen_name=self.handle)
@@ -59,7 +65,7 @@ class TwitterScraper:
     def get_all_connections(self):
         self.write_initial()
         errors = []
-        
+
         for f in range(len(self.followers)):
             connections = []
 

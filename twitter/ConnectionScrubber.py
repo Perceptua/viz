@@ -67,7 +67,7 @@ class Scrubber:
         prune = []
 
         for c in connections:
-            if len(c['connections']) < self.threshold:
+            if len(c['connections']) < self.threshold - 1:
                 # print(c['handle'], 'has less than', self.threshold, 'connection(s)' )
                 prune.append(c['uid'])
 
