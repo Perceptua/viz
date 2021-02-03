@@ -1,13 +1,15 @@
 import twitter, os, csv, time
 
 class TwitterScraper:
-    def __init__(self, handle, request_limit):
+    def __init__(self, handle, request_limit, start_at):
+        self.handle = handle
+        self.max_requests = 10000
+        self.request_limit = min(self.max_requests, request_limit) # limit to 10,000 requests
+        self.start_at = max(0, start_at)
+        self.out_file = self.get_file()
+
         self.api = self.load_api()
         time.sleep(5) # allow api to initialize
-
-        self.handle = handle
-        self.request_limit = request_limit
-        self.out_file = self.get_file()
         self.user, self.followers = self.get_user_info()
 
     def load_api(self):
@@ -31,10 +33,12 @@ class TwitterScraper:
         return api
 
     def get_file(self):
-        os.mkdir(self.handle)
+        if not os.path.isdir(self.handle):
+            os.mkdir(self.handle)
+
         out_file = self.handle + '\\connections.csv'
 
-        if self.request_limit:
+        if self.request_limit < self.max_requests:
             out_file = self.handle + '\\test_connections.csv'
 
         return out_file
@@ -48,6 +52,7 @@ class TwitterScraper:
     def get_followers(self, uid):
         followers = self.api.GetFollowers(user_id=uid,
             total_count=self.request_limit, include_user_entities=False)
+
         followers = [[f.id, f.screen_name] for f in followers]
 
         return followers
@@ -63,20 +68,26 @@ class TwitterScraper:
         return connections
 
     def get_all_connections(self):
-        self.write_initial()
+        # if running for 1st time, make .csv file for user
+        if self.start_at == 0:
+            self.write_initial()
+        else:
+            self.resume_session()
+
         errors = []
 
-        for f in range(len(self.followers)):
+        start = max(0, self.start_at - 1)
+        for f in range(start, len(self.followers)):
             connections = []
 
             try:
                 connections.append({
-                    'pk': f + 2,
+                    'pk': f + 2, # skip 1 for headers & 1 for user
                     'user': self.followers[f],
                     'connections': self.get_user_connections(self.followers[f]),
                 })
             except Exception as e:
-                # exceptions occur when user account is private
+                # exceptions occur e.g. when an account is private
                 errors.append((self.followers[f], e))
 
             self.write_batch(connections)
@@ -95,10 +106,21 @@ class TwitterScraper:
             writer.writeheader()
             writer.writerow(initial_user)
 
+    def resume_session(self):
+        with open(self.out_file, 'r', newline='\n') as i:
+            connections = list(csv.reader(i))
+
+        with open(self.out_file, 'w', newline='\n') as o:
+            writer = csv.writer(o)
+            writer.writerow(connections[0])
+            connections = connections[1:]
+            writer.writerows([c for c in connections if int(c[0]) <= self.start_at])
+
     def write_batch(self, connections):
         with open(self.out_file, 'a', newline='\n') as f:
             writer = csv.DictWriter(f, fieldnames=['pk', 'user', 'connections'])
             writer.writerows(connections)
+
 
 
 def check_is_test():
@@ -109,15 +131,30 @@ def check_is_test():
         return is_test
     except:
         print('error: please indicate whether you are running a test (y/n).')
-        return self.check_is_test()
+        return check_is_test()
+
+def get_start(handle):
+    start_at = 0
+    resume = input('would you like to (0) start a new run or (1) resume a previous run?: ')
+
+    try:
+        if (int(resume)):
+            prompt = 'enter the pk in ' + handle + '/connections.csv at which you wish to resume: '
+            start_at = int(input(prompt))
+        return start_at
+    except:
+        print('please enter only integers')
+        return get_start
 
 if __name__ == '__main__':
     handle = input('enter the twitter handle whose followers you want to retrieve: ')
-    request_limit = None
+    request_limit = 10000 # default request limit
 
     if check_is_test():
         request_limit = 3
 
     print('proceeding with request limit', request_limit)
-    scraper = TwitterScraper(handle, request_limit)
+
+    start_at = get_start(handle)
+    scraper = TwitterScraper(handle, request_limit, start_at)
     scraper.get_all_connections()

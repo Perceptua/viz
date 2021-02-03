@@ -6,9 +6,10 @@ import numpy as np
 import os
 
 class VizTwitter:
-    def __init__(self, handle, threshold):
+    def __init__(self, handle, threshold, colorscale='Burgyl'):
         self.handle = handle
         self.threshold = int(threshold)
+        self.colorscale = colorscale
         self.plots = {
             1: 'network',
             2: 'surface',
@@ -132,7 +133,7 @@ class VizTwitter:
             x=nodes[0], y=nodes[1], z=nodes[2],
             mode='markers', hoverinfo='text',
             marker=dict(
-                showscale=True, colorscale='Burgyl',
+                showscale=True, colorscale=self.colorscale,
                 reversescale=False, color=[], size=10,
                 line_width=2, colorbar=dict(
                     thickness=15, title='node connections',
@@ -178,7 +179,7 @@ class VizTwitter:
         z += [row_z]
 
         fig = go.Figure(
-            data=[go.Heatmap(z=z, text=x, colorscale='Burgyl', reversescale=False,
+            data=[go.Heatmap(z=z, text=x, colorscale=self.colorscale, reversescale=False,
                 hoverongaps=False, hoverinfo='text+z')],
             layout=self.get_layout())
 
@@ -194,7 +195,7 @@ class VizTwitter:
         point_trace = go.Scatter(
             x=points[:,0], y=points[:,1],
             mode='markers', hoverinfo='text', name='points',
-            marker=dict(color=points[:,0], colorscale='Burgyl', reversescale=False))
+            marker=dict(color=points[:,0], colorscale=self.colorscale, reversescale=False))
 
         point_trace = self.style_trace(point_trace)
         fig.add_trace(point_trace)
@@ -202,7 +203,7 @@ class VizTwitter:
         fig.add_trace(go.Scatter(
             x=vor.vertices[:,0], y=vor.vertices[:,1],
             mode='markers', hoverinfo='text', name='vertices',
-            marker=dict(color=vor.vertices[:,0], colorscale='Burgyl', reversescale=False)))
+            marker=dict(color=vor.vertices[:,0], colorscale=self.colorscale, reversescale=False)))
 
         for simplex in vor.ridge_vertices:
             simplex = np.asarray(simplex)
@@ -243,8 +244,12 @@ if __name__ == '__main__':
     print('which user\'s data do you want to visualize?', choices, sep='\n')
     handle = input('username: ')
     threshold = input('enter connection threshold (#): ')
+    colorscale = input('enter a colorscale or press enter to continue with Burgyl: ')
 
-    viz = VizTwitter(handle, threshold)
+    if not colorscale:
+        colorscale = 'Burgyl'
+
+    viz = VizTwitter(handle, threshold, colorscale)
 
     print(viz.plots)
     original = set(viz.plots.keys())
