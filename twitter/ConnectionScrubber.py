@@ -90,10 +90,12 @@ class Scrubber:
             pk += 1
 
         return connections
+
     def show_connections(self, connections):
         pp = pprint.PrettyPrinter(indent=4)
         pp.pprint(connections)
+        print(len(connections))
 
 if __name__ == '__main__':
-    scrubber = Scrubber(handle='Aphorikles', threshold=0, test=False)
+    scrubber = Scrubber(handle='Aphorikles', threshold=10, test=False)
     scrubber.show_connections(scrubber.connections)
